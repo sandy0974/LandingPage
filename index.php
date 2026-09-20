@@ -1,12 +1,19 @@
 <?php
 require 'config/database.php';
 
-if (session_status() === PHP_SESSION_NONE) session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 $page_title = 'My Portfolio';
 
+/* =========================
+   PROJECTS
+========================= */
 $stmt = $pdo->query("
-    SELECT p.*, c.name AS category_name
+    SELECT 
+        p.*,
+        c.name AS category_name
     FROM projects p
     LEFT JOIN categories c ON c.id = p.category_id
     ORDER BY p.created_at DESC
@@ -15,10 +22,14 @@ $stmt = $pdo->query("
 
 $projects = $stmt->fetchAll();
 
+/* =========================
+   3D MODELS
+========================= */
 $assetRoot = __DIR__ . '/uploads';
 $models = [];
 
 if (is_dir($assetRoot)) {
+
     $it = new RecursiveIteratorIterator(
         new RecursiveDirectoryIterator(
             $assetRoot,
@@ -27,6 +38,7 @@ if (is_dir($assetRoot)) {
     );
 
     foreach ($it as $file) {
+
         if (
             !$file->isFile() ||
             !in_array(
@@ -49,14 +61,13 @@ if (is_dir($assetRoot)) {
 
         $models[] = [
             'name' => pathinfo($rel, PATHINFO_FILENAME),
-            'url' => '/uploads/' . implode(
+            'url'  => '/uploads/' . implode(
                 '/',
                 array_map(
                     'rawurlencode',
                     explode('/', $rel)
                 )
-            ),
-            'extension' => strtolower($file->getExtension())
+            )
         ];
     }
 }
@@ -71,441 +82,1021 @@ $featured = $models[0] ?? null;
 require 'includes/header.php';
 ?>
 
-<main class="portfolio-page">
+<!-- =========================================================
+     HERO
+========================================================= -->
 
-    <section class="hero">
-        <div class="hero-content">
-            <div class="eyebrow">
-                3D ARTIST • GAME DEV • PORTFOLIO
-            </div>
+<section class="hero model-hero">
 
-            <h1>
-                Build. Create. Share.
-            </h1>
+    <div class="model-copy">
 
-            <p>
-                Portfolio pribadi untuk menampilkan project,
-                game, 3D model, asset, desain, dan eksperimen lainnya.
-            </p>
-
-            <div class="hero-actions">
-                <a href="#projects" class="btn">
-                    View Projects
-                </a>
-
-                <a href="#assets" class="btn btn-secondary">
-                    Explore 3D Assets
-                </a>
-            </div>
-        </div>
-    </section>
-
-
-    <section class="viewer-section">
-
-        <div class="section-heading">
-            <div>
-                <span class="eyebrow">
-                    3D SHOWCASE
-                </span>
-
-                <h2>
-                    3D Model Viewer
-                </h2>
-            </div>
-
-            <div class="viewer-help">
-                Rotate • Zoom • Pan
-            </div>
+        <div class="eyebrow">
+            3D Artist • Game Dev • Portfolio
         </div>
 
+        <h1>
+            Build. Create.<br>
+            Share.
+        </h1>
 
-        <div class="model-viewer-card">
+        <p>
+            Portfolio pribadi untuk menampilkan project,
+            game, 3D model, asset, desain, dan eksperimen lainnya.
+        </p>
 
-            <?php if ($featured): ?>
+        <div class="hero-actions">
 
-                <model-viewer
-                    id="mainModel"
-                    src="<?= htmlspecialchars($featured['url']) ?>"
-                    alt="<?= htmlspecialchars($featured['name']) ?>"
-                    camera-controls
-                    touch-action="pan-y"
-                    auto-rotate
-                    auto-rotate-delay="1000"
-                    rotation-per-second="20deg"
-                    shadow-intensity="1"
-                    shadow-softness="1"
-                    exposure="1"
-                    environment-image="neutral"
-                    interaction-prompt="none"
-                    loading="eager"
-                ></model-viewer>
+            <a class="btn" href="#projects">
+                Lihat Projects
+            </a>
 
-                <div class="model-toolbar">
-
-                    <div class="model-info">
-                        <span>
-                            CURRENT MODEL
-                        </span>
-
-                        <strong id="modelName">
-                            <?= htmlspecialchars($featured['name']) ?>
-                        </strong>
-                    </div>
-
-                    <div class="model-actions">
-
-                        <button
-                            type="button"
-                            id="toggleRotation"
-                        >
-                            Pause Rotation
-                        </button>
-
-                        <button
-                            type="button"
-                            id="resetModel"
-                        >
-                            Reset View
-                        </button>
-
-                    </div>
-
-                </div>
-
-            <?php else: ?>
-
-                <div class="model-empty">
-                    <div>
-                        <strong>
-                            3D Asset Viewer
-                        </strong>
-
-                        <p>
-                            Belum ada model 3D.
-                        </p>
-                    </div>
-                </div>
-
-            <?php endif; ?>
-
-        </div>
-
-    </section>
-
-
-    <section
-        class="section"
-        id="projects"
-    >
-
-        <div class="section-heading">
-
-            <div>
-                <span class="eyebrow">
-                    SELECTED WORK
-                </span>
-
-                <h2>
-                    Projects
-                </h2>
-            </div>
-
-            <a
-                href="/projects/index.php"
-                class="section-link"
-            >
-                View all →
+            <a class="btn btn-secondary" href="#assets">
+                Explore 3D Assets
             </a>
 
         </div>
 
+    </div>
 
-        <?php if ($projects): ?>
-
-            <div class="project-carousel">
-
-                <?php foreach ($projects as $p): ?>
-
-                    <article class="project-card">
-
-                        <?php if (!empty($p['thumbnail'])): ?>
-
-                            <div class="project-thumbnail">
-
-                                <img
-                                    src="/uploads/<?= htmlspecialchars($p['thumbnail']) ?>"
-                                    alt="<?= htmlspecialchars($p['title']) ?>"
-                                    loading="lazy"
-                                >
-
-                            </div>
-
-                        <?php else: ?>
-
-                            <div class="project-placeholder">
-                                PROJECT
-                            </div>
-
-                        <?php endif; ?>
+</section>
 
 
-                        <div class="project-card-body">
+<!-- =========================================================
+     3D MODEL VIEWER
+========================================================= -->
 
-                            <span class="tag">
-                                <?= htmlspecialchars(
-                                    $p['category_name'] ?? 'Uncategorized'
-                                ) ?>
-                            </span>
+<section class="model-section">
 
-                            <h3>
-                                <?= htmlspecialchars($p['title']) ?>
-                            </h3>
+    <div class="model-viewer-card">
 
-                            <p class="muted">
-                                <?= htmlspecialchars(
-                                    mb_strimwidth(
-                                        $p['description'] ?? '',
-                                        0,
-                                        150,
-                                        '...'
-                                    )
-                                ) ?>
-                            </p>
+        <?php if ($featured): ?>
 
-                            <a
-                                href="/projects/detail.php?id=<?= (int)$p['id'] ?>"
-                            >
-                                View Project →
-                            </a>
+            <model-viewer
+                id="mainModel"
+                src="<?= htmlspecialchars($featured['url']) ?>"
+                alt="<?= htmlspecialchars($featured['name']) ?>"
+                camera-controls
+                auto-rotate
+                shadow-intensity="1"
+                exposure="1"
+                environment-image="neutral"
+                interaction-prompt="none"
+                camera-orbit="0deg 75deg 105%"
+                field-of-view="auto">
+            </model-viewer>
 
-                        </div>
+            <div class="model-toolbar">
 
-                    </article>
+                <div class="model-info">
+                    <span class="model-label">
+                        3D MODEL
+                    </span>
 
-                <?php endforeach; ?>
+                    <strong id="modelName">
+                        <?= htmlspecialchars($featured['name']) ?>
+                    </strong>
+                </div>
+
+                <button
+                    type="button"
+                    id="resetModel">
+                    Reset View
+                </button>
 
             </div>
 
         <?php else: ?>
 
-            <div class="empty">
-                Belum ada project.
+            <div class="model-empty">
+
+                <div>
+
+                    <strong>
+                        3D Asset Viewer
+                    </strong>
+
+                    <p>
+                        Belum ada model 3D.
+                    </p>
+
+                    <small>
+                        Upload file
+                        <b>.glb</b> atau
+                        <b>.gltf</b>
+                        ke folder
+                        <code>/uploads/</code>.
+                    </small>
+
+                </div>
+
             </div>
 
         <?php endif; ?>
 
-    </section>
+    </div>
+
+</section>
 
 
-    <section
-        class="section"
-        id="assets"
-    >
+<!-- =========================================================
+     PROJECTS
+========================================================= -->
 
-        <div class="section-heading">
+<section class="section" id="projects">
 
-            <div>
-                <span class="eyebrow">
-                    3D LIBRARY
-                </span>
+    <div class="section-heading">
 
-                <h2>
-                    3D Assets
-                </h2>
-            </div>
+        <div>
 
-            <span class="muted">
-                <?= count($models) ?> model
+            <span class="eyebrow">
+                Selected Work
             </span>
+
+            <h2>
+                Projects
+            </h2>
 
         </div>
 
+        <a href="/projects/index.php">
+            View all →
+        </a>
 
-        <?php if ($models): ?>
+    </div>
 
-            <div class="asset-carousel">
 
-                <?php foreach ($models as $i => $m): ?>
+    <?php if ($projects): ?>
 
-                    <button
-                        type="button"
-                        class="asset-card <?= $i === 0 ? 'active' : '' ?>"
-                        data-model="<?= htmlspecialchars($m['url']) ?>"
-                        data-name="<?= htmlspecialchars($m['name']) ?>"
-                    >
+        <div class="project-carousel">
 
-                        <div class="asset-preview">
+            <?php foreach ($projects as $p): ?>
 
-                            <model-viewer
-                                src="<?= htmlspecialchars($m['url']) ?>"
-                                alt="<?= htmlspecialchars($m['name']) ?>"
-                                camera-controls
-                                disable-zoom
-                                interaction-prompt="none"
-                                shadow-intensity="1"
-                                exposure="1"
-                                environment-image="neutral"
-                            ></model-viewer>
+                <article class="project-card">
 
+                    <?php if (!empty($p['thumbnail'])): ?>
+
+                        <img
+                            src="/uploads/<?= htmlspecialchars($p['thumbnail']) ?>"
+                            alt="<?= htmlspecialchars($p['title']) ?>"
+                            loading="lazy">
+
+                    <?php else: ?>
+
+                        <div class="project-placeholder">
+                            PROJECT
                         </div>
 
+                    <?php endif; ?>
 
-                        <div class="asset-card-body">
 
-                            <strong>
-                                <?= htmlspecialchars($m['name']) ?>
-                            </strong>
+                    <div class="project-card-body">
 
-                            <span>
-                                <?= strtoupper($m['extension']) ?> • 3D Model
-                            </span>
+                        <span class="tag">
+                            <?= htmlspecialchars(
+                                $p['category_name'] ?? 'Uncategorized'
+                            ) ?>
+                        </span>
 
-                        </div>
+                        <h3>
+                            <?= htmlspecialchars($p['title']) ?>
+                        </h3>
 
-                    </button>
+                        <p class="muted">
 
-                <?php endforeach; ?>
+                            <?= htmlspecialchars(
+                                mb_strimwidth(
+                                    $p['description'] ?? '',
+                                    0,
+                                    150,
+                                    '...'
+                                )
+                            ) ?>
 
-            </div>
+                        </p>
 
-        <?php else: ?>
+                        <a
+                            href="/projects/detail.php?id=<?= (int)$p['id'] ?>">
+                            View Project →
+                        </a>
 
-            <div class="empty">
-                Belum ada 3D asset.
-            </div>
+                    </div>
 
-        <?php endif; ?>
+                </article>
 
-    </section>
+            <?php endforeach; ?>
 
-</main>
+        </div>
 
+    <?php else: ?>
+
+        <div class="empty">
+            Belum ada project.
+        </div>
+
+    <?php endif; ?>
+
+</section>
+
+
+<!-- =========================================================
+     3D ASSETS
+========================================================= -->
+
+<section class="section" id="assets">
+
+    <div class="section-heading">
+
+        <div>
+
+            <span class="eyebrow">
+                3D Library
+            </span>
+
+            <h2>
+                3D Models
+            </h2>
+
+        </div>
+
+        <span class="muted">
+            <?= count($models) ?> model
+        </span>
+
+    </div>
+
+
+    <?php if ($models): ?>
+
+        <div class="asset-carousel">
+
+            <?php foreach ($models as $i => $m): ?>
+
+                <button
+                    type="button"
+                    class="asset-card <?= $i === 0 ? 'active' : '' ?>"
+                    data-model="<?= htmlspecialchars($m['url']) ?>"
+                    data-name="<?= htmlspecialchars($m['name']) ?>">
+
+                    <div class="asset-preview">
+
+                        <model-viewer
+                            src="<?= htmlspecialchars($m['url']) ?>"
+                            alt="<?= htmlspecialchars($m['name']) ?>"
+                            camera-controls
+                            disable-zoom
+                            interaction-prompt="none"
+                            shadow-intensity=".7">
+                        </model-viewer>
+
+                    </div>
+
+                    <div class="asset-card-body">
+
+                        <strong>
+                            <?= htmlspecialchars($m['name']) ?>
+                        </strong>
+
+                        <span>
+                            3D Model
+                        </span>
+
+                    </div>
+
+                </button>
+
+            <?php endforeach; ?>
+
+        </div>
+
+    <?php else: ?>
+
+        <div class="empty">
+            Belum ada model 3D.
+        </div>
+
+    <?php endif; ?>
+
+</section>
+
+
+<!-- =========================================================
+     MODEL VIEWER
+========================================================= -->
 
 <script
     type="module"
-    src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"
-></script>
+    src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js">
+</script>
 
+
+<!-- =========================================================
+     STYLE
+========================================================= -->
+
+<style>
+
+/* =========================================================
+   HERO
+========================================================= */
+
+.model-hero {
+    width: 100%;
+    padding: 45px 0 25px;
+}
+
+.model-copy {
+    width: 100%;
+    max-width: 850px;
+    padding: 5px 0 20px;
+}
+
+.model-copy h1 {
+    font-size: clamp(2.5rem, 6vw, 4.6rem);
+    line-height: 1.03;
+    letter-spacing: -0.045em;
+    margin: 10px 0 18px;
+    max-width: 700px;
+}
+
+.model-copy p {
+    max-width: 680px;
+    font-size: clamp(.95rem, 1.5vw, 1.1rem);
+    line-height: 1.7;
+}
+
+.hero-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 24px;
+}
+
+.btn-secondary {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,.18);
+}
+
+
+/* =========================================================
+   3D VIEWER SECTION
+========================================================= */
+
+.model-section {
+    width: 100%;
+    margin: 10px 0 70px;
+}
+
+.model-viewer-card {
+    width: 100%;
+    min-height: 560px;
+    overflow: hidden;
+
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 24px;
+
+    background:
+        radial-gradient(
+            circle at 50% 35%,
+            rgba(255,255,255,.08),
+            transparent 45%
+        ),
+        rgba(255,255,255,.025);
+
+    box-shadow:
+        0 25px 70px rgba(0,0,0,.28);
+}
+
+.model-viewer-card model-viewer {
+    display: block;
+    width: 100%;
+    height: 500px;
+
+    --poster-color: transparent;
+}
+
+.model-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 16px;
+
+    padding: 15px 18px;
+
+    border-top:
+        1px solid rgba(255,255,255,.08);
+}
+
+.model-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+
+    min-width: 0;
+}
+
+.model-label {
+    font-size: .68rem;
+    letter-spacing: .12em;
+    opacity: .45;
+}
+
+.model-info strong {
+    font-size: .95rem;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.model-toolbar button {
+    border: 0;
+    border-radius: 9px;
+
+    padding: 8px 13px;
+
+    cursor: pointer;
+}
+
+
+/* =========================================================
+   EMPTY VIEWER
+========================================================= */
+
+.model-empty {
+    min-height: 560px;
+
+    display: grid;
+    place-items: center;
+
+    text-align: center;
+
+    padding: 30px;
+}
+
+.model-empty strong {
+    font-size: 1.3rem;
+}
+
+.model-empty p {
+    margin: 8px 0;
+    opacity: .65;
+}
+
+.model-empty small {
+    opacity: .5;
+}
+
+
+/* =========================================================
+   SECTION HEADER
+========================================================= */
+
+.section-heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+
+    gap: 20px;
+
+    margin-bottom: 22px;
+}
+
+.section-heading h2 {
+    margin-top: 5px;
+}
+
+
+/* =========================================================
+   ASSET CAROUSEL
+========================================================= */
+
+.asset-carousel,
+.project-carousel {
+    display: flex;
+
+    gap: 18px;
+
+    overflow-x: auto;
+
+    padding:
+        4px
+        2px
+        18px;
+
+    scroll-snap-type: x mandatory;
+
+    scrollbar-width: thin;
+}
+
+.asset-card,
+.project-card {
+    flex: 0 0 285px;
+
+    scroll-snap-align: start;
+
+    overflow: hidden;
+
+    border:
+        1px solid rgba(255,255,255,.09);
+
+    border-radius: 18px;
+
+    background:
+        rgba(255,255,255,.035);
+}
+
+.asset-card {
+    padding: 0;
+
+    text-align: left;
+
+    color: inherit;
+
+    cursor: pointer;
+
+    transition:
+        transform .2s ease,
+        border-color .2s ease,
+        background .2s ease;
+}
+
+.asset-card:hover,
+.asset-card.active {
+    transform: translateY(-4px);
+
+    border-color:
+        rgba(255,255,255,.3);
+
+    background:
+        rgba(255,255,255,.055);
+}
+
+.asset-preview {
+    width: 100%;
+
+    background:
+        radial-gradient(
+            circle at 50% 40%,
+            rgba(255,255,255,.08),
+            transparent 55%
+        );
+}
+
+.asset-preview model-viewer {
+    display: block;
+
+    width: 100%;
+    height: 190px;
+
+    --poster-color: transparent;
+}
+
+.asset-card-body {
+    padding: 16px;
+}
+
+.asset-card-body strong {
+    display: block;
+
+    margin-bottom: 5px;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.asset-card-body span {
+    font-size: .82rem;
+    opacity: .6;
+}
+
+
+/* =========================================================
+   PROJECT CAROUSEL
+========================================================= */
+
+.project-card {
+    flex-basis: 340px;
+}
+
+.project-card img,
+.project-placeholder {
+    width: 100%;
+    height: 205px;
+
+    object-fit: cover;
+
+    display: block;
+}
+
+.project-placeholder {
+    display: grid;
+    place-items: center;
+
+    background:
+        rgba(255,255,255,.06);
+
+    font-weight: 700;
+
+    letter-spacing: .12em;
+}
+
+.project-card-body {
+    padding: 16px;
+}
+
+.project-card h3 {
+    margin: 10px 0 8px;
+}
+
+.project-card-body > a {
+    display: inline-block;
+
+    margin-top: 12px;
+}
+
+.tag {
+    display: inline-block;
+
+    font-size: .75rem;
+
+    padding: 4px 8px;
+
+    border-radius: 6px;
+
+    background:
+        rgba(255,255,255,.08);
+}
+
+
+/* =========================================================
+   EMPTY
+========================================================= */
+
+.empty {
+    padding: 40px;
+
+    text-align: center;
+
+    border:
+        1px solid rgba(255,255,255,.08);
+
+    border-radius: 16px;
+
+    opacity: .6;
+}
+
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 850px) {
+
+    .model-hero {
+        padding:
+            30px
+            0
+            20px;
+    }
+
+    .model-copy {
+        padding:
+            0
+            0
+            22px;
+    }
+
+    .model-copy h1 {
+        font-size:
+            clamp(
+                2.3rem,
+                9vw,
+                3.7rem
+            );
+
+        line-height: 1.04;
+
+        max-width: 600px;
+    }
+
+    .model-copy p {
+        font-size: 1rem;
+
+        max-width: 600px;
+    }
+
+    .model-section {
+        margin-bottom: 55px;
+    }
+
+    .model-viewer-card {
+        min-height: 460px;
+
+        border-radius: 20px;
+    }
+
+    .model-viewer-card model-viewer {
+        height: 410px;
+    }
+
+    .model-empty {
+        min-height: 460px;
+    }
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 600px) {
+
+    .model-hero {
+        padding:
+            20px
+            0
+            15px;
+    }
+
+    .model-copy {
+        padding-bottom: 18px;
+    }
+
+    .model-copy h1 {
+        font-size:
+            clamp(
+                2.15rem,
+                12vw,
+                3rem
+            );
+
+        line-height: 1.05;
+
+        letter-spacing: -.035em;
+
+        margin:
+            8px
+            0
+            14px;
+    }
+
+    .model-copy p {
+        font-size: .92rem;
+
+        line-height: 1.6;
+    }
+
+    .hero-actions {
+        width: 100%;
+
+        gap: 9px;
+
+        margin-top: 18px;
+    }
+
+    .hero-actions .btn {
+        flex: 1 1 auto;
+
+        text-align: center;
+
+        padding:
+            11px
+            14px;
+
+        font-size: .9rem;
+    }
+
+    .model-section {
+        margin-bottom: 45px;
+    }
+
+    .model-viewer-card {
+        min-height: 370px;
+
+        border-radius: 18px;
+    }
+
+    .model-viewer-card model-viewer {
+        height: 320px;
+    }
+
+    .model-empty {
+        min-height: 370px;
+    }
+
+    .model-toolbar {
+        padding:
+            11px
+            13px;
+
+        font-size: .85rem;
+    }
+
+    .model-toolbar button {
+        padding:
+            7px
+            10px;
+
+        font-size: .8rem;
+    }
+
+    .section-heading {
+        align-items: flex-start;
+
+        margin-bottom: 17px;
+    }
+
+    .section-heading h2 {
+        font-size: 1.5rem;
+    }
+
+    .asset-card {
+        flex-basis: 250px;
+    }
+
+    .asset-preview model-viewer {
+        height: 170px;
+    }
+
+    .project-card {
+        flex-basis: 285px;
+    }
+
+    .project-card img,
+    .project-placeholder {
+        height: 175px;
+    }
+}
+
+
+/* =========================================================
+   SMALL MOBILE
+========================================================= */
+
+@media (max-width: 400px) {
+
+    .model-copy h1 {
+        font-size: 2.1rem;
+    }
+
+    .model-copy p {
+        font-size: .88rem;
+    }
+
+    .hero-actions {
+        flex-direction: column;
+    }
+
+    .hero-actions .btn {
+        width: 100%;
+    }
+
+    .model-viewer-card {
+        min-height: 330px;
+    }
+
+    .model-viewer-card model-viewer {
+        height: 280px;
+    }
+
+    .model-empty {
+        min-height: 330px;
+    }
+
+    .asset-card {
+        flex-basis: 230px;
+    }
+
+}
+
+
+/* =========================================================
+   TOUCH / MOBILE CAROUSEL
+========================================================= */
+
+@media (hover: none) {
+
+    .asset-card:hover {
+        transform: none;
+    }
+
+}
+
+
+/* =========================================================
+   SCROLLBAR
+========================================================= */
+
+.asset-carousel::-webkit-scrollbar,
+.project-carousel::-webkit-scrollbar {
+    height: 6px;
+}
+
+.asset-carousel::-webkit-scrollbar-thumb,
+.project-carousel::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+
+    background:
+        rgba(255,255,255,.18);
+}
+
+</style>
+
+
+<!-- =========================================================
+     JAVASCRIPT
+========================================================= -->
 
 <script>
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function () {
 
-    const mainModel =
-        document.getElementById('mainModel');
-
-    const modelName =
-        document.getElementById('modelName');
-
-    const resetModel =
-        document.getElementById('resetModel');
-
-    const toggleRotation =
-        document.getElementById('toggleRotation');
+    const viewer = document.getElementById('mainModel');
+    const modelName = document.getElementById('modelName');
+    const resetButton = document.getElementById('resetModel');
 
     const assetCards =
         document.querySelectorAll('.asset-card');
 
-    let isRotating = true;
 
+    /* =========================
+       CHANGE MAIN MODEL
+    ========================= */
 
-    assetCards.forEach(card => {
+    assetCards.forEach(function (card) {
 
-        card.addEventListener('click', () => {
+        card.addEventListener('click', function () {
 
-            if (!mainModel) {
+            if (!viewer) {
                 return;
             }
 
-            mainModel.src =
+            const modelUrl =
                 card.dataset.model;
 
+            const name =
+                card.dataset.name;
+
+
+            viewer.src = modelUrl;
+
+            viewer.alt = name;
+
+
             if (modelName) {
-                modelName.textContent =
-                    card.dataset.name;
+                modelName.textContent = name;
             }
 
-            assetCards.forEach(item => {
+
+            assetCards.forEach(function (item) {
+
                 item.classList.remove('active');
+
             });
+
 
             card.classList.add('active');
 
-            mainModel.setAttribute(
-                'auto-rotate',
-                ''
-            );
 
-            isRotating = true;
+            /* Scroll viewer into view on mobile */
 
-            if (toggleRotation) {
-                toggleRotation.textContent =
-                    'Pause Rotation';
+            if (window.innerWidth <= 600) {
+
+                const viewerSection =
+                    document.querySelector('.model-section');
+
+                if (viewerSection) {
+
+                    viewerSection.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+
+                }
+
             }
-
-            document
-                .querySelector('.viewer-section')
-                ?.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
 
         });
 
     });
 
 
-    if (toggleRotation && mainModel) {
+    /* =========================
+       RESET VIEW
+    ========================= */
 
-        toggleRotation.addEventListener(
+    if (resetButton && viewer) {
+
+        resetButton.addEventListener(
             'click',
-            () => {
+            function () {
 
-                if (isRotating) {
+                viewer.cameraOrbit =
+                    '0deg 75deg 105%';
 
-                    mainModel.removeAttribute(
-                        'auto-rotate'
-                    );
-
-                    toggleRotation.textContent =
-                        'Start Rotation';
-
-                    isRotating = false;
-
-                } else {
-
-                    mainModel.setAttribute(
-                        'auto-rotate',
-                        ''
-                    );
-
-                    toggleRotation.textContent =
-                        'Pause Rotation';
-
-                    isRotating = true;
-
-                }
-
-            }
-        );
-
-    }
-
-
-    if (resetModel && mainModel) {
-
-        resetModel.addEventListener(
-            'click',
-            () => {
-
-                mainModel.cameraOrbit =
-                    'auto auto auto';
-
-                mainModel.cameraTarget =
-                    'auto auto auto';
-
-                mainModel.fieldOfView =
+                viewer.fieldOfView =
                     'auto';
 
             }
@@ -518,406 +1109,4 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 
-<style>
-
-.portfolio-page {
-    width: 100%;
-}
-
-.hero {
-    width: 100%;
-    min-height: 560px;
-    display: flex;
-    align-items: center;
-    padding: 80px 0;
-}
-
-.hero-content {
-    max-width: 850px;
-}
-
-.eyebrow {
-    display: block;
-    margin-bottom: 15px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: .15em;
-    opacity: .5;
-}
-
-.hero h1 {
-    margin: 0;
-    font-size: clamp(40px, 10vw, 130px);
-    line-height: .66;
-    letter-spacing: -.065em;
-}
-
-.hero p {
-    max-width: 620px;
-    margin-top: 30px;
-    font-size: 18px;
-    line-height: 1.7;
-    opacity: .6;
-}
-
-.hero-actions {
-    display: flex;
-    gap: 12px;
-    margin-top: 30px;
-    flex-wrap: wrap;
-}
-
-.btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 13px 19px;
-    border-radius: 10px;
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: 600;
-    background: rgba(255,255,255,.95);
-    color: #111;
-}
-
-.btn-secondary {
-    background: transparent;
-    color: inherit;
-    border: 1px solid rgba(255,255,255,.15);
-}
-
-.viewer-section {
-    padding: 60px 0 90px;
-}
-
-.section {
-    padding: 80px 0;
-}
-
-.section-heading {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 20px;
-    margin-bottom: 25px;
-}
-
-.section-heading h2 {
-    margin: 0;
-    font-size: 38px;
-    letter-spacing: -.035em;
-}
-
-.viewer-help {
-    font-size: 12px;
-    opacity: .4;
-}
-
-.model-viewer-card {
-    width: 100%;
-    overflow: hidden;
-    border: 1px solid rgba(255,255,255,.09);
-    border-radius: 26px;
-    background:
-        radial-gradient(
-            circle at 50% 35%,
-            rgba(255,255,255,.08),
-            transparent 48%
-        ),
-        rgba(255,255,255,.025);
-    box-shadow:
-        0 30px 90px rgba(0,0,0,.25);
-}
-
-#mainModel {
-    display: block;
-    width: 100%;
-    height: 650px;
-    background: transparent;
-}
-
-.model-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-    padding: 16px 20px;
-    border-top: 1px solid rgba(255,255,255,.08);
-}
-
-.model-info span {
-    display: block;
-    margin-bottom: 5px;
-    font-size: 9px;
-    letter-spacing: .15em;
-    opacity: .4;
-}
-
-.model-info strong {
-    font-size: 17px;
-}
-
-.model-actions {
-    display: flex;
-    gap: 8px;
-}
-
-.model-actions button {
-    padding: 9px 13px;
-    border: 1px solid rgba(255,255,255,.1);
-    border-radius: 9px;
-    background: rgba(255,255,255,.04);
-    color: inherit;
-    cursor: pointer;
-}
-
-.model-actions button:hover {
-    background: rgba(255,255,255,.09);
-}
-
-.model-empty {
-    height: 650px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-}
-
-.model-empty p {
-    opacity: .5;
-}
-
-.section-link {
-    font-size: 13px;
-    text-decoration: none;
-    opacity: .55;
-}
-
-.project-carousel,
-.asset-carousel {
-    display: flex;
-    gap: 18px;
-    width: 100%;
-    overflow-x: auto;
-    padding: 5px 3px 20px;
-    scroll-snap-type: x mandatory;
-    scrollbar-width: thin;
-}
-
-.project-card {
-    flex: 0 0 340px;
-    overflow: hidden;
-    border: 1px solid rgba(255,255,255,.08);
-    border-radius: 18px;
-    background: rgba(255,255,255,.035);
-    scroll-snap-align: start;
-}
-
-.project-thumbnail {
-    width: 100%;
-    height: 205px;
-    overflow: hidden;
-}
-
-.project-thumbnail img {
-    width: 100%;
-    height: 100%;
-    display: block;
-    object-fit: cover;
-}
-
-.project-placeholder {
-    width: 100%;
-    height: 205px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(255,255,255,.05);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: .15em;
-    opacity: .4;
-}
-
-.project-card-body {
-    padding: 18px;
-}
-
-.project-card-body .tag {
-    display: block;
-    margin-bottom: 9px;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: .12em;
-    opacity: .4;
-}
-
-.project-card-body h3 {
-    margin: 0 0 9px;
-    font-size: 20px;
-}
-
-.project-card-body p {
-    min-height: 45px;
-    margin: 0;
-    font-size: 13px;
-    line-height: 1.6;
-}
-
-.project-card-body a {
-    display: inline-block;
-    margin-top: 16px;
-    font-size: 13px;
-    text-decoration: none;
-}
-
-.asset-card {
-    flex: 0 0 280px;
-    padding: 0;
-    overflow: hidden;
-    border: 1px solid rgba(255,255,255,.08);
-    border-radius: 18px;
-    background: rgba(255,255,255,.035);
-    color: inherit;
-    text-align: left;
-    cursor: pointer;
-    scroll-snap-align: start;
-    transition:
-        transform .2s ease,
-        border-color .2s ease,
-        background .2s ease;
-}
-
-.asset-card:hover {
-    transform: translateY(-4px);
-    border-color: rgba(255,255,255,.2);
-}
-
-.asset-card.active {
-    border-color: rgba(255,255,255,.4);
-    background: rgba(255,255,255,.055);
-}
-
-.asset-preview {
-    width: 100%;
-    height: 220px;
-    background:
-        radial-gradient(
-            circle at 50% 40%,
-            rgba(255,255,255,.08),
-            transparent 60%
-        );
-}
-
-.asset-preview model-viewer {
-    width: 100%;
-    height: 100%;
-    display: block;
-}
-
-.asset-card-body {
-    padding: 15px 16px 17px;
-    border-top: 1px solid rgba(255,255,255,.07);
-}
-
-.asset-card-body strong {
-    display: block;
-    margin-bottom: 8px;
-    font-size: 15px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.asset-card-body span {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: .08em;
-    opacity: .4;
-}
-
-.muted {
-    opacity: .45;
-}
-
-.empty {
-    padding: 45px 30px;
-    border: 1px dashed rgba(255,255,255,.12);
-    border-radius: 18px;
-    text-align: center;
-    opacity: .5;
-}
-
-@media (max-width: 850px) {
-
-    .hero {
-        min-height: 480px;
-        padding: 60px 0;
-    }
-
-    .hero h1 {
-        font-size: 70px;
-    }
-
-    .section-heading {
-        align-items: flex-start;
-        flex-direction: column;
-    }
-
-    #mainModel {
-        height: 500px;
-    }
-
-    .model-empty {
-        height: 500px;
-    }
-
-}
-
-@media (max-width: 550px) {
-
-    .hero h1 {
-        font-size: 58px;
-    }
-
-    .hero p {
-        font-size: 16px;
-    }
-
-    #mainModel {
-        height: 400px;
-    }
-
-    .model-empty {
-        height: 400px;
-    }
-
-    .model-toolbar {
-        align-items: flex-start;
-        flex-direction: column;
-    }
-
-    .model-actions {
-        width: 100%;
-    }
-
-    .model-actions button {
-        flex: 1;
-    }
-
-    .project-card {
-        flex-basis: 285px;
-    }
-
-    .asset-card {
-        flex-basis: 250px;
-    }
-
-}
-
-</style>
-
-
-<?php
-require 'includes/footer.php';
-?>
+<?php require 'includes/footer.php'; ?>
