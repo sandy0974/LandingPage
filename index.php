@@ -6,7 +6,7 @@ $stmt=$pdo->query("SELECT p.*, c.name AS category_name FROM projects p LEFT JOIN
 $projects=$stmt->fetchAll();
 ?>
 <section class="hero">
-  <div class="eyebrow">Portfolio • Projects • Assets</div>
+  <div class="eyebrow">Portfolio • Projects • Kontol</div>
   <h1>Build. Create.<br>Share.</h1>
   <p>Website portfolio pribadi untuk menampilkan project, game, desain, asset, CNC, dan karya lainnya.</p>
   <a class="btn" href="/projects/index.php">Lihat Projects</a>
