@@ -547,8 +547,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 .hero h1 {
     margin: 0;
-    font-size: clamp(65px, 10vw, 130px);
-    line-height: .88;
+    font-size: clamp(40px, 10vw, 130px);
+    line-height: .66;
     letter-spacing: -.065em;
 }
 
